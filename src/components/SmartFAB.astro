@@ -1,0 +1,191 @@
+---
+// Simple Mobile Buttons - Just the essentials
+export interface Props {
+  headings?: Array<{
+    depth: number;
+    slug: string;
+    text: string;
+  }>;
+}
+
+const { headings = [] } = Astro.props;
+const hasTableOfContents = headings.length > 0;
+---
+
+<!-- Simple Mobile Action Buttons -->
+<div class="mobile-actions-container">
+  <!-- Table of Contents Button (only if TOC exists) -->
+  {hasTableOfContents && (
+    <button class="mobile-action-btn mobile-toc-btn" id="simple-toc-btn" aria-label="Table of contents">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 5h2M8 5h9M3 10h2M8 10h9M3 15h2M8 15h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  )}
+  
+  <!-- Focus Mode Button -->
+  <button class="mobile-action-btn mobile-focus-btn" id="simple-focus-btn" aria-label="Toggle focus mode">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 7V5C3 3.89543 3.89543 3 5 3H7M13 3H15C16.1046 3 17 3.89543 17 5V7M17 13V15C17 16.1046 16.1046 17 15 17H13M7 17H5C3.89543 17 3 16.1046 3 15V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  </button>
+  
+  <!-- Scroll to Top Button (shows when scrolled) -->
+  <button class="mobile-action-btn mobile-scroll-btn" id="simple-scroll-btn" aria-label="Scroll to top">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 4L10 16M10 4L6 8M10 4L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</div>
+
+<style>
+  .mobile-actions-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1500;
+    display: none; /* Hidden by default, shown on mobile */
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mobile-action-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--sidebar-bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .mobile-action-btn:hover {
+    background: var(--sidebar-hover);
+    color: var(--text);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Scroll button starts hidden, shows when scrolled */
+  .mobile-scroll-btn {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+  }
+
+  .mobile-scroll-btn.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  /* Dark mode adjustments */
+  :global(.dark) .mobile-action-btn {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  :global(.dark) .mobile-action-btn:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Show only on mobile and tablet */
+  @media (max-width: 1279px) {
+    .mobile-actions-container {
+      display: flex;
+    }
+  }
+
+  /* Mobile specific adjustments */
+  @media (max-width: 768px) {
+    .mobile-actions-container {
+      bottom: 20px;
+      right: 20px;
+      gap: 10px;
+    }
+
+    .mobile-action-btn {
+      width: 44px;
+      height: 44px;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tocBtn = document.getElementById('simple-toc-btn');
+    const focusBtn = document.getElementById('simple-focus-btn');
+    const scrollBtn = document.getElementById('simple-scroll-btn');
+    
+    let isFocusMode = false;
+
+    // TOC button click
+    tocBtn?.addEventListener('click', () => {
+      const tocButton = document.getElementById('mobile-toc-button');
+      tocButton?.click();
+    });
+
+    // Focus button click
+    focusBtn?.addEventListener('click', () => {
+      isFocusMode = !isFocusMode;
+      
+      if (isFocusMode) {
+        document.documentElement.classList.add('focus-mode');
+        localStorage.setItem('focusMode', 'true');
+      } else {
+        document.documentElement.classList.remove('focus-mode');
+        localStorage.removeItem('focusMode');
+      }
+    });
+
+    // Scroll button click
+    scrollBtn?.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Show/hide scroll button based on scroll position
+    function updateScrollButton() {
+      if (!scrollBtn) return;
+      
+      const scrollY = window.scrollY;
+      const shouldShow = scrollY > 400; // Show after scrolling 400px
+      
+      if (shouldShow) {
+        scrollBtn.classList.add('visible');
+      } else {
+        scrollBtn.classList.remove('visible');
+      }
+    }
+
+    // Throttled scroll handler
+    let scrollTimeout: number;
+    window.addEventListener('scroll', () => {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      scrollTimeout = window.setTimeout(updateScrollButton, 16);
+    });
+
+    // Restore focus mode state
+    if (localStorage.getItem('focusMode') === 'true') {
+      isFocusMode = true;
+      document.documentElement.classList.add('focus-mode');
+    }
+
+    // Initial check
+    updateScrollButton();
+  });
+</script>

@@ -1,0 +1,119 @@
+---
+// Reading Experience Enhancements Component
+---
+
+<!-- Focus Mode Toggle -->
+<button class="focus-toggle" id="focus-toggle" aria-label="Toggle focus mode">
+  <svg class="focus-toggle-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 7V5C3 3.89543 3.89543 3 5 3H7M13 3H15C16.1046 3 17 3.89543 17 5V7M17 13V15C17 16.1046 16.1046 17 15 17H13M7 17H5C3.89543 17 3 16.1046 3 15V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+  </svg>
+  <span class="focus-toggle-text">Focus</span>
+</button>
+
+<!-- Scroll to Top Button -->
+<button class="scroll-to-top" id="scroll-to-top" aria-label="Scroll to top">
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 4L10 16M10 4L6 8M10 4L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const focusToggle = document.getElementById('focus-toggle');
+    const scrollToTop = document.getElementById('scroll-to-top');
+    const focusToggleText = focusToggle?.querySelector('.focus-toggle-text');
+    
+    let isFocusMode = false;
+    
+    // Focus Mode Toggle
+    focusToggle?.addEventListener('click', () => {
+      isFocusMode = !isFocusMode;
+      
+      if (isFocusMode) {
+        document.documentElement.classList.add('focus-mode');
+        if (focusToggleText) focusToggleText.textContent = 'Exit Focus';
+        
+        // Store focus mode state
+        localStorage.setItem('focusMode', 'true');
+      } else {
+        document.documentElement.classList.remove('focus-mode');
+        if (focusToggleText) focusToggleText.textContent = 'Focus';
+        
+        localStorage.removeItem('focusMode');
+      }
+    });
+    
+    // Restore focus mode state
+    if (localStorage.getItem('focusMode') === 'true') {
+      isFocusMode = true;
+      document.documentElement.classList.add('focus-mode');
+      if (focusToggleText) focusToggleText.textContent = 'Exit Focus';
+    }
+    
+    // Scroll to Top functionality
+    let scrollTimeout: number;
+    
+    function updateScrollToTopVisibility() {
+      const scrollY = window.scrollY;
+      const shouldShow = scrollY > 400; // Show after scrolling 400px
+      
+      if (shouldShow) {
+        scrollToTop?.classList.add('visible');
+      } else {
+        scrollToTop?.classList.remove('visible');
+      }
+    }
+    
+    // Throttled scroll handler
+    function onScroll() {
+      if (scrollTimeout) {
+        window.cancelAnimationFrame(scrollTimeout);
+      }
+      
+      scrollTimeout = window.requestAnimationFrame(() => {
+        updateScrollToTopVisibility();
+      });
+    }
+    
+    window.addEventListener('scroll', onScroll);
+    updateScrollToTopVisibility(); // Initial check
+    
+    // Scroll to top click handler
+    scrollToTop?.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // F key for focus mode
+      if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Only trigger if not typing in an input
+        const activeElement = document.activeElement;
+        const isTyping = activeElement?.tagName === 'INPUT' || 
+                        activeElement?.tagName === 'TEXTAREA' || 
+                        activeElement?.contentEditable === 'true';
+        
+        if (!isTyping) {
+          e.preventDefault();
+          focusToggle?.click();
+        }
+      }
+      
+      // Escape to exit focus mode
+      if (e.key === 'Escape' && isFocusMode) {
+        focusToggle?.click();
+      }
+      
+      // Home key to scroll to top
+      if (e.key === 'Home' && e.ctrlKey) {
+        e.preventDefault();
+        scrollToTop?.click();
+      }
+    });
+    
+  });
+</script>

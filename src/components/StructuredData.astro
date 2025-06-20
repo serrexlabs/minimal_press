@@ -1,0 +1,53 @@
+---
+import { generateOrganizationSchema, generateArticleSchema } from '../utils/seo';
+import { siteConfig } from '../config';
+
+export interface Props {
+  type: 'organization' | 'article';
+  data?: {
+    title?: string;
+    description?: string;
+    date?: Date;
+    updated?: Date;
+    author?: string;
+    image?: string;
+    tags?: string[];
+    slug?: string;
+    content?: string;
+  };
+}
+
+const { type, data } = Astro.props;
+
+// Use configured site URL, fallback to Astro.site
+const siteUrl = Astro.site?.toString() || siteConfig.url;
+const config = {
+  ...siteConfig,
+  url: siteUrl
+};
+
+let schema;
+
+if (type === 'organization') {
+  schema = generateOrganizationSchema(config);
+} else if (type === 'article' && data) {
+  schema = generateArticleSchema(
+    {
+      title: data.title || '',
+      description: data.description || '',
+      date: data.date || new Date(),
+      updated: data.updated,
+      author: data.author,
+      image: data.image,
+      tags: data.tags,
+      slug: data.slug || '',
+      content: data.content || ''
+    },
+    config
+  );
+}
+---
+
+{schema && (
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+)}

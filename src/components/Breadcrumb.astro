@@ -1,0 +1,199 @@
+---
+import { siteConfig } from '../config';
+
+export interface BreadcrumbItem {
+  name: string;
+  href: string;
+}
+
+export interface Props {
+  items?: BreadcrumbItem[];
+  currentPage?: string;
+  separator?: string;
+  showHome?: boolean;
+}
+
+const { 
+  items = [], 
+  currentPage, 
+  separator = '/',
+  showHome = true 
+} = Astro.props;
+
+// Build breadcrumb items from URL path if not provided
+let breadcrumbItems: BreadcrumbItem[] = [];
+
+if (items.length > 0) {
+  breadcrumbItems = items;
+} else {
+  // Auto-generate breadcrumbs from current URL
+  const pathname = Astro.url.pathname;
+  const pathSegments = pathname.split('/').filter(segment => segment !== '');
+  
+  if (showHome) {
+    breadcrumbItems.push({ name: 'Home', href: '/' });
+  }
+  
+  // Build breadcrumb path
+  let currentPath = '';
+  pathSegments.forEach((segment, index) => {
+    currentPath += `/${segment}`;
+    
+    // Format segment name (capitalize, replace hyphens with spaces)
+    let segmentName = segment
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+    
+    // Special handling for known segments
+    if (segment === 'blog') {
+      segmentName = 'Blog';
+    }
+    
+    // Don't add current page as a link
+    if (index === pathSegments.length - 1 && currentPage) {
+      segmentName = currentPage;
+    }
+    
+    breadcrumbItems.push({
+      name: segmentName,
+      href: currentPath
+    });
+  });
+}
+
+// Generate JSON-LD structured data for breadcrumbs
+const breadcrumbListSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  'itemListElement': breadcrumbItems.map((item, index) => ({
+    '@type': 'ListItem',
+    'position': index + 1,
+    'name': item.name,
+    'item': `${siteConfig.url}${item.href}`
+  }))
+};
+---
+
+{breadcrumbItems.length > 1 && (
+  <>
+    <!-- Breadcrumb structured data -->
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbListSchema)} />
+    
+    <!-- Visual breadcrumb navigation -->
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb navigation">
+      <ol class="breadcrumb-list">
+        {breadcrumbItems.map((item, index) => (
+          <li class="breadcrumb-item">
+            {index < breadcrumbItems.length - 1 ? (
+              <>
+                <a 
+                  href={item.href} 
+                  class="breadcrumb-link"
+                  itemprop="item"
+                >
+                  <span itemprop="name">{item.name}</span>
+                </a>
+                <span class="breadcrumb-separator" aria-hidden="true">{separator}</span>
+              </>
+            ) : (
+              <span class="breadcrumb-current" aria-current="page" itemprop="name">
+                {item.name}
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  </>
+)}
+
+<style>
+  .breadcrumb-nav {
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb-list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .breadcrumb-link {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    padding: 0.25rem 0;
+    border-radius: 4px;
+  }
+
+  .breadcrumb-link:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+
+  .breadcrumb-link:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .breadcrumb-separator {
+    color: var(--color-text-tertiary);
+    font-weight: 300;
+    user-select: none;
+  }
+
+  .breadcrumb-current {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  /* Enhanced styling for better visual hierarchy */
+  .breadcrumb-nav::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+      90deg, 
+      var(--color-border) 0%, 
+      transparent 100%
+    );
+    margin-bottom: 0.75rem;
+  }
+
+  /* Hide breadcrumbs on mobile to save space */
+  @media (max-width: 1023px) {
+    .breadcrumb-nav {
+      display: none;
+    }
+  }
+
+  /* Accessibility improvements */
+  @media (prefers-reduced-motion: reduce) {
+    .breadcrumb-link {
+      transition: none;
+    }
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .breadcrumb-separator {
+      color: var(--color-text-primary);
+    }
+    
+    .breadcrumb-link {
+      text-decoration: underline;
+    }
+  }
+</style>

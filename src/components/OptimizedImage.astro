@@ -1,0 +1,363 @@
+---
+export interface Props {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  loading?: 'lazy' | 'eager';
+  quality?: number;
+  sizes?: string;
+  class?: string;
+  caption?: string;
+  clickToZoom?: boolean;
+}
+
+const { 
+  src, 
+  alt, 
+  width, 
+  height, 
+  loading = 'lazy',
+  quality = 80,
+  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+  class: className = '',
+  caption,
+  clickToZoom = false
+} = Astro.props;
+
+// Generate responsive image URLs (this would typically use a service like Cloudinary)
+// For now, we'll use the original image but prepare for future optimization
+const optimizedSrc = src;
+const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+
+// Calculate aspect ratio for layout stability
+const aspectRatio = width && height ? `${(height / width) * 100}%` : '56.25%'; // Default to 16:9
+
+// Generate unique ID for modal functionality
+const imageId = `img-${Math.random().toString(36).substr(2, 9)}`;
+---
+
+<figure class={`optimized-image-container ${className}`}>
+  <div class="image-wrapper" style={`aspect-ratio: ${width && height ? `${width} / ${height}` : '16 / 9'}`}>
+    <picture>
+      <!-- WebP version for modern browsers -->
+      <source srcset={webpSrc} type="image/webp" />
+      
+      <!-- Fallback to original format -->
+      <img
+        id={imageId}
+        src={optimizedSrc}
+        alt={alt}
+        width={width}
+        height={height}
+        loading={loading}
+        decoding="async"
+        sizes={sizes}
+        class={`responsive-image ${clickToZoom ? 'clickable' : ''}`}
+        data-click-to-zoom={clickToZoom}
+      />
+    </picture>
+    
+    {loading === 'lazy' && (
+      <div class="image-placeholder" aria-hidden="true">
+        <div class="placeholder-content">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M35 32.5H5C3.61875 32.5 2.5 31.3812 2.5 30V10C2.5 8.61875 3.61875 7.5 5 7.5H35C36.3812 7.5 37.5 8.61875 37.5 10V30C37.5 31.3812 36.3812 32.5 35 32.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 17.5C16.3807 17.5 17.5 16.3807 17.5 15C17.5 13.6193 16.3807 12.5 15 12.5C13.6193 12.5 12.5 13.6193 12.5 15C12.5 16.3807 13.6193 17.5 15 17.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M37.5 25L30 17.5L10 37.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Loading image...</span>
+        </div>
+      </div>
+    )}
+    
+    {clickToZoom && (
+      <div class="zoom-overlay" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9.16667 15.8333C12.8486 15.8333 15.8333 12.8486 15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M17.5 17.5L13.875 13.875" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.16667 7.5V10.8333" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7.5 9.16667H10.8333" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    )}
+  </div>
+  
+  {caption && (
+    <figcaption class="image-caption">
+      {caption}
+    </figcaption>
+  )}
+</figure>
+
+{clickToZoom && (
+  <div id={`modal-${imageId}`} class="image-modal" aria-hidden="true" role="dialog" aria-labelledby={`modal-title-${imageId}`}>
+    <div class="modal-backdrop" aria-label="Close image"></div>
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Close image modal">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <img src={optimizedSrc} alt={alt} class="modal-image" />
+      {caption && (
+        <div id={`modal-title-${imageId}`} class="modal-caption">{caption}</div>
+      )}
+    </div>
+  </div>
+)}
+
+<style>
+  .optimized-image-container {
+    margin: 2rem 0;
+    max-width: 100%;
+  }
+
+  .image-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .responsive-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .responsive-image.clickable {
+    cursor: zoom-in;
+  }
+
+  .responsive-image.clickable:hover {
+    transform: scale(1.02);
+  }
+
+  .image-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-surface);
+    color: var(--color-text-tertiary);
+    z-index: 1;
+  }
+
+  .placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  .placeholder-content span {
+    font-size: 0.875rem;
+  }
+
+  .zoom-overlay {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .image-wrapper:hover .zoom-overlay {
+    opacity: 1;
+  }
+
+  .image-caption {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* Image Modal Styles */
+  .image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .image-modal.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    cursor: pointer;
+  }
+
+  .modal-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: -3rem;
+    right: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 0.75rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    z-index: 1001;
+  }
+
+  .modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .modal-image {
+    max-width: 100%;
+    max-height: calc(90vh - 4rem);
+    object-fit: contain;
+    border-radius: 8px;
+  }
+
+  .modal-caption {
+    color: white;
+    text-align: center;
+    font-size: 0.875rem;
+    max-width: 80%;
+  }
+
+  /* Remove placeholder when image loads */
+  .responsive-image[data-loaded="true"] ~ .image-placeholder {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .optimized-image-container {
+      margin: 1.5rem 0;
+    }
+    
+    .modal-content {
+      max-width: 95vw;
+      max-height: 95vh;
+    }
+    
+    .modal-close {
+      top: -2.5rem;
+      padding: 0.5rem;
+    }
+  }
+</style>
+
+<script>
+  // Enhanced image loading and modal functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    // Handle lazy loading and placeholder removal
+    const images = document.querySelectorAll('.responsive-image');
+    
+    images.forEach(img => {
+      // Remove placeholder when image loads
+      img.addEventListener('load', () => {
+        img.setAttribute('data-loaded', 'true');
+      });
+      
+      // Handle click to zoom functionality
+      if (img.dataset.clickToZoom === 'true') {
+        img.addEventListener('click', () => {
+          const modal = document.getElementById(`modal-${img.id}`);
+          if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+          }
+        });
+      }
+    });
+    
+    // Handle modal close functionality
+    const modals = document.querySelectorAll('.image-modal');
+    
+    modals.forEach(modal => {
+      const closeBtn = modal.querySelector('.modal-close');
+      const backdrop = modal.querySelector('.modal-backdrop');
+      
+      function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+      
+      closeBtn?.addEventListener('click', closeModal);
+      backdrop?.addEventListener('click', closeModal);
+      
+      // Close on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+          closeModal();
+        }
+      });
+    });
+    
+    // Intersection Observer for lazy loading optimization
+    if ('IntersectionObserver' in window) {
+      const imageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target as HTMLImageElement;
+            
+            // Preload the image for smoother loading
+            const tempImg = new Image();
+            tempImg.onload = () => {
+              img.src = img.src; // Trigger the actual load
+            };
+            tempImg.src = img.src;
+            
+            imageObserver.unobserve(img);
+          }
+        });
+      }, {
+        rootMargin: '50px 0px' // Start loading 50px before entering viewport
+      });
+      
+      images.forEach(img => {
+        if (img.loading === 'lazy') {
+          imageObserver.observe(img);
+        }
+      });
+    }
+  });
+</script>

@@ -1,0 +1,127 @@
+---
+import { getCollection } from 'astro:content';
+import { generateInternalLinkSuggestions } from '../utils/seo';
+
+export interface Props {
+  content: string;
+  currentSlug: string;
+  maxSuggestions?: number;
+}
+
+const { content, currentSlug, maxSuggestions = 3 } = Astro.props;
+
+// Get all blog posts
+const allPosts = await getCollection('blog');
+
+// Filter out current post and prepare posts for analysis
+const otherPosts = allPosts
+  .filter(post => post.slug !== currentSlug)
+  .map(post => ({
+    slug: post.slug,
+    data: {
+      title: post.data.title,
+      tags: post.data.tags,
+      keywords: post.data.keywords,
+    }
+  }));
+
+// Generate internal link suggestions
+const linkSuggestions = generateInternalLinkSuggestions(
+  content,
+  otherPosts,
+  maxSuggestions
+);
+---
+
+{linkSuggestions.length > 0 && (
+  <aside class="internal-links">
+    <h4 class="internal-links-title">💡 Related Content</h4>
+    <p class="internal-links-subtitle">Consider linking to these related articles:</p>
+    <ul class="internal-links-list">
+      {linkSuggestions.map((suggestion) => (
+        <li class="internal-link-item">
+          <a href={`/blog/${suggestion.post.slug}`} class="internal-link">
+            <span class="internal-link-title">{suggestion.post.data.title}</span>
+            <span class="internal-link-anchor">Suggested anchor: "{suggestion.anchor}"</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </aside>
+)}
+
+<style>
+  .internal-links {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-accent);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .internal-links-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: var(--color-text-primary);
+  }
+
+  .internal-links-subtitle {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin: 0 0 1rem 0;
+  }
+
+  .internal-links-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .internal-link-item {
+    margin-bottom: 0.75rem;
+  }
+
+  .internal-link-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .internal-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 0.75rem;
+    border-radius: 6px;
+    background: rgba(0, 122, 204, 0.05);
+    border: 1px solid rgba(0, 122, 204, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .internal-link:hover {
+    background: rgba(0, 122, 204, 0.1);
+    border-color: var(--color-accent);
+  }
+
+  .internal-link-title {
+    display: block;
+    font-weight: 600;
+    color: var(--color-accent);
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+  }
+
+  .internal-link-anchor {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    font-style: italic;
+  }
+
+  @media (max-width: 768px) {
+    .internal-links {
+      margin: 1.5rem 0;
+      padding: 1rem;
+    }
+  }
+</style>

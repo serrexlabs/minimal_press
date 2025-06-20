@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npx playwright screenshot:*)",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_close",
+      "Bash(grep:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:minimal.guide)",
+      "mcp__playwright__browser_snapshot",
+      "Bash(mkdir:*)"
+    ],
+    "deny": []
+  }
+}

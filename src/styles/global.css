@@ -1,0 +1,921 @@
+@import "tailwindcss";
+
+/* CSS Variables for theme switching */
+:root {
+  /* Light theme (default) */
+  --bg: #ffffff;
+  --text: #333333;
+  --text-muted: #666666;
+  --border: #e1e5e9;
+  --sidebar-bg: #f8f9fa;
+  --sidebar-border: #e1e5e9;
+  --sidebar-hover: #e9ecef;
+  --accent: #007acc;
+  --accent-hover: #0066b3;
+  
+  /* Content colors */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-surface: #ffffff;
+  --color-border: #e1e5e9;
+  --color-accent: #007acc;
+  --color-tag-bg: #f1f3f4;
+  --color-tag-text: #5f6368;
+}
+
+/* Dark theme */
+.dark {
+  --bg: #1a1a1a;
+  --text: #e4e4e7;
+  --text-muted: #a1a1aa;
+  --border: #404040;
+  --sidebar-bg: #242424;
+  --sidebar-border: #404040;
+  --sidebar-hover: #363636;
+  --accent: #007acc;
+  --accent-hover: #0066b3;
+  
+  /* Content colors - dark */
+  --color-text-primary: #e4e4e7;
+  --color-text-secondary: #a1a1aa;
+  --color-text-tertiary: #71717a;
+  --color-surface: #242424;
+  --color-border: #404040;
+  --color-accent: #007acc;
+  --color-tag-bg: #363636;
+  --color-tag-text: #a1a1aa;
+}
+
+/* Base styles with performance optimizations */
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+  /* Optimize font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Enable hardware acceleration for smoother scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Ensure proper fixed positioning */
+  position: relative;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  font-weight: 400;
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  /* Optimize text rendering */
+  text-rendering: optimizeLegibility;
+  /* Improve paint performance */
+  will-change: background-color;
+  /* Ensure fixed positioning works properly */
+  position: relative;
+}
+
+/* Force theme colors to apply immediately */
+html.dark body {
+  background-color: #1a1a1a !important;
+  color: #e4e4e7 !important;
+}
+
+html:not(.dark) body {
+  background-color: #ffffff !important;
+  color: #333333 !important;
+}
+
+html.dark .left-sidebar {
+  background-color: #242424 !important;
+  border-color: #404040 !important;
+}
+
+html:not(.dark) .left-sidebar {
+  background-color: #f8f9fa !important;
+  border-color: #e1e5e9 !important;
+}
+
+html.dark .main-content {
+  background-color: #1a1a1a !important;
+}
+
+html:not(.dark) .main-content {
+  background-color: #ffffff !important;
+}
+
+/* Layout Structure - Minimal.guide style */
+.app-container {
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(to right, 
+    var(--sidebar-bg) 0%, 
+    var(--sidebar-bg) calc(50% - 640px), 
+    var(--bg) calc(50% - 640px), 
+    var(--bg) 100%);
+  position: relative;
+  /* Ensure no transform that could break fixed positioning */
+  transform: none;
+}
+
+/* Fixed-width centered layout */
+.app-container {
+  width: 100%;
+  max-width: none;
+}
+
+.left-sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  position: fixed;
+  left: calc(50% - 640px); /* Default centered position */
+  top: 0;
+  height: 100%;
+  overflow-y: auto;
+  z-index: 10;
+  padding: 24px 0;
+  /* Hide scrollbar when not needed */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+/* Hide scrollbar for WebKit browsers */
+.left-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.site-header {
+  padding: 0 24px 24px 24px;
+  border-bottom: 1px solid var(--sidebar-border);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.site-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-name:hover {
+  color: var(--accent);
+}
+
+.theme-toggle-wrapper {
+  opacity: 0.7;
+}
+
+.theme-toggle-wrapper:hover {
+  opacity: 1;
+}
+
+.nav-menu {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-link {
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background: var(--sidebar-hover);
+  color: var(--text);
+}
+
+.nav-link.active {
+  background: var(--accent);
+  color: white;
+}
+
+.main-content {
+  width: 800px;
+  background: var(--bg);
+  min-height: 100vh;
+  margin: 0 auto;
+  position: relative;
+}
+
+.content-wrapper {
+  width: 100%;
+  padding: 64px 80px;
+}
+
+.page-content {
+  line-height: 1.6;
+}
+
+.page-header {
+  margin-bottom: 48px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-header h1 {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0 0 16px 0;
+  color: var(--text);
+}
+
+.page-description {
+  font-size: 20px;
+  color: var(--text-muted);
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.page-meta {
+  font-size: 14px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.markdown-content {
+  font-size: 18px;
+  line-height: 1.8;
+  max-width: 65ch; /* Optimal reading width */
+  letter-spacing: 0.01em;
+}
+
+.markdown-content h1 {
+  font-size: 36px;
+  font-weight: 700;
+  margin: 48px 0 24px 0;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.markdown-content h2 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 40px 0 20px 0;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.markdown-content h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 32px 0 16px 0;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.markdown-content p {
+  margin: 24px 0;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 16px 0;
+  padding-left: 24px;
+}
+
+.markdown-content li {
+  margin: 8px 0;
+  color: var(--text);
+}
+
+.markdown-content a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.markdown-content code {
+  background: var(--sidebar-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+}
+
+.markdown-content pre {
+  background: var(--sidebar-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 24px 0;
+}
+
+.markdown-content pre code {
+  background: none;
+  padding: 0;
+  font-size: 14px;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.markdown-content th {
+  background: var(--sidebar-bg);
+  font-weight: 600;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid var(--accent);
+  padding-left: 16px;
+  margin: 24px 0;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+/* Right sidebar styles removed - TOC now handles its own positioning */
+
+.toc-wrapper h3 {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0 0 16px 0;
+}
+
+.toc-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toc-link {
+  display: block;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+}
+
+.toc-link:hover {
+  background: var(--sidebar-hover);
+  color: var(--text);
+}
+
+.toc-2 {
+  padding-left: 16px;
+}
+
+.toc-3 {
+  padding-left: 24px;
+}
+
+.toc-4 {
+  padding-left: 32px;
+}
+
+/* Responsive Design */
+
+/* Desktop Large (1400px+) - Show TOC sidebar */
+@media (min-width: 1400px) {
+  .right-sidebar {
+    display: block;
+  }
+}
+
+/* Desktop Intermediate (1280px+) - Ideal centered layout */
+@media (min-width: 1280px) {
+  .left-sidebar {
+    left: calc(50% - 640px);
+  }
+  
+  .right-sidebar {
+    right: calc(50% - 640px);
+  }
+}
+
+/* Desktop Small (1024px-1279px) - Sidebars at edge, content needs margin */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .left-sidebar {
+    left: 0;
+  }
+  
+  .right-sidebar {
+    right: 0;
+    display: none; /* Hide TOC on smaller desktop screens */
+  }
+  
+  .main-content {
+    margin-left: 280px; /* Account for left sidebar width */
+  }
+}
+
+/* Hide right sidebar by default on smaller screens */
+@media (max-width: 1399px) {
+  .right-sidebar {
+    display: none;
+  }
+}
+
+/* Hide redundant buttons when simple mobile buttons are active */
+@media (max-width: 1279px) {
+  .mobile-toc-button,
+  .scroll-to-top,
+  .focus-toggle {
+    display: none !important;
+  }
+}
+
+/* Mobile Layout - Hide desktop sidebar, show mobile menu */
+@media (max-width: 1023px) {
+  .left-sidebar {
+    display: none;
+  }
+  
+  .app-container {
+    background: var(--bg); /* Solid background on mobile */
+  }
+  
+  .main-content {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    margin-top: 60px; /* Space for mobile header bar */
+  }
+  
+  .content-wrapper {
+    padding: 1rem 1.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+  }
+  
+  .page-header h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+  
+  .page-description {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  .page-meta {
+    font-size: 0.875rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* Mobile Typography and Spacing */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 1rem;
+  }
+  
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .page-description {
+    font-size: 0.95rem;
+  }
+  
+  .markdown-content h1 {
+    font-size: 1.75rem;
+    margin: 2rem 0 1rem 0;
+  }
+  
+  .markdown-content h2 {
+    font-size: 1.5rem;
+    margin: 1.5rem 0 1rem 0;
+  }
+  
+  .markdown-content h3 {
+    font-size: 1.25rem;
+    margin: 1.25rem 0 0.75rem 0;
+  }
+  
+  .markdown-content p {
+    margin: 1rem 0;
+  }
+  
+  .markdown-content pre {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+  
+  .markdown-content table {
+    font-size: 0.875rem;
+    margin: 1.5rem 0;
+  }
+  
+  .markdown-content th,
+  .markdown-content td {
+    padding: 0.75rem 0.5rem;
+  }
+}
+
+/* Theme transitions */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Better text selection */
+::selection {
+  background: rgba(0, 122, 204, 0.2);
+  color: var(--text);
+}
+
+.dark ::selection {
+  background: rgba(0, 122, 204, 0.3);
+  color: var(--text);
+}
+
+/* Focus Mode */
+.focus-mode .left-sidebar,
+.focus-mode .toc-container,
+.focus-mode .mobile-toc-button,
+.focus-mode .mobile-header-bar {
+  opacity: 0.1;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.focus-mode .left-sidebar:hover,
+.focus-mode .toc-container:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.focus-mode .main-content {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.focus-mode .content-wrapper {
+  max-width: 75ch;
+  margin: 0 auto;
+  padding: 64px 40px;
+}
+
+/* Focus mode button */
+.focus-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--sidebar-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.focus-toggle:hover {
+  background: var(--sidebar-hover);
+  color: var(--text);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.focus-toggle:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode focus button */
+.dark .focus-toggle {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .focus-toggle:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Focus toggle icon */
+.focus-toggle-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
+}
+
+.focus-toggle:hover .focus-toggle-icon {
+  opacity: 1;
+}
+
+/* Hide text when not in focus mode, show when in focus mode */
+.focus-toggle-text {
+  display: none;
+}
+
+.focus-mode .focus-toggle-text {
+  display: inline;
+}
+
+.focus-mode .focus-toggle {
+  padding: 10px 16px;
+  background: var(--sidebar-bg);
+  color: var(--text-muted);
+  border-color: var(--border);
+  opacity: 0.7;
+}
+
+.focus-mode .focus-toggle:hover {
+  background: var(--sidebar-hover);
+  color: var(--text);
+  border-color: var(--accent);
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+/* Responsive positioning for focus button */
+@media (min-width: 1400px) {
+  .focus-toggle {
+    /* Position to the left of the TOC area */
+    right: calc(50% - 400px - 32px - 260px - 80px);
+    left: auto;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1399px) {
+  .focus-toggle {
+    /* Position at comfortable distance from edge */
+    right: 80px;
+    left: auto;
+  }
+}
+
+@media (max-width: 1023px) {
+  .focus-toggle {
+    top: 70px;
+    right: 16px;
+    left: auto;
+    font-size: 13px;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .focus-toggle:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .dark .focus-toggle {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .dark .focus-toggle:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  }
+  
+  .focus-toggle-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .focus-mode .focus-toggle {
+    padding: 8px 12px;
+  }
+}
+
+/* Scroll to Top Button */
+.scroll-to-top {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  background: var(--sidebar-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.scroll-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+  background: var(--sidebar-hover);
+  color: var(--text);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.dark .scroll-to-top {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .scroll-to-top:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 1023px) {
+  .scroll-to-top {
+    bottom: 80px;
+    left: 16px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sidebar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Performance Optimizations for Core Web Vitals */
+
+/* Optimize Layout Shift (CLS) */
+img, video, iframe {
+  height: auto;
+  max-width: 100%;
+}
+
+/* Prevent layout shift from fonts */
+@font-face {
+  font-family: 'system-ui';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: local('system-ui');
+}
+
+/* Critical resource hints for better loading */
+img {
+  /* Optimize image loading */
+  loading: lazy;
+  decoding: async;
+}
+
+/* First meaningful paint optimization */
+.app-container {
+  /* Improve paint performance - removed 'layout' to allow fixed positioning */
+  contain: style paint;
+}
+
+/* Optimize animations for better performance */
+/* Removed global transform to prevent fixed positioning issues */
+
+/* Reduce reflows and repaints */
+.content-wrapper {
+  /* Create a new stacking context */
+  isolation: isolate;
+}
+
+/* Critical rendering optimizations */
+.main-content {
+  /* Optimize rendering performance - removed layout to allow fixed positioning */
+  contain: style;
+}
+
+/* Optimize hover states for better interaction */
+a, button, [role="button"] {
+  /* Reduce paint on hover */
+  will-change: transform;
+}
+
+/* Optimize scrolling performance */
+.left-sidebar {
+  /* Use GPU for scroll containers */
+  transform: translateZ(0);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Reduce layout thrashing */
+.toc-link, .nav-link {
+  /* Optimize frequent repaints */
+  will-change: background-color, color;
+}
+
+/* Print styles for better accessibility */
+@media print {
+  .left-sidebar,
+  .right-sidebar,
+  .theme-toggle-wrapper {
+    display: none !important;
+  }
+  
+  .main-content {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .page-content {
+    padding: 0 !important;
+  }
+}
+
+/* Prefers reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --border: #000000;
+    --text-muted: #000000;
+  }
+  
+  .dark {
+    --border: #ffffff;
+    --text-muted: #ffffff;
+  }
+}
+
+/* Optimize for forced colors mode */
+@media (forced-colors: active) {
+  .breadcrumb-separator,
+  .toc-link,
+  .nav-link {
+    forced-color-adjust: none;
+  }
+}

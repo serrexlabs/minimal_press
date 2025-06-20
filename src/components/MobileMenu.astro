@@ -1,0 +1,1009 @@
+---
+import { generateTreeNavigation, findActiveNavigationItem, type TreeNavigation } from '../utils/navigation';
+import ThemeToggle from './ThemeToggle.astro';
+import { siteConfig } from '../config';
+
+export interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = Astro.url.pathname } = Astro.props;
+
+// Generate dynamic navigation from content structure
+const navigation: TreeNavigation = await generateTreeNavigation();
+
+// Find which item is currently active
+const activeItem = findActiveNavigationItem(navigation, currentPath);
+
+// Auto-expand folder if it contains the active page
+const expandedFolders = new Set<number>();
+if (activeItem?.type === 'folder' && activeItem.folderIndex !== undefined) {
+  expandedFolders.add(activeItem.folderIndex);
+}
+---
+
+<!-- Mobile Header Bar -->
+<div class="mobile-header-bar">
+  <!-- Mobile Menu Button -->
+  <button 
+    id="mobile-menu-button" 
+    class="mobile-menu-button"
+    aria-label="Open navigation menu"
+    aria-expanded="false"
+    aria-controls="mobile-menu-drawer"
+  >
+    <div class="hamburger-icon">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </div>
+  </button>
+  
+  <!-- Site Name -->
+  <a href="/" class="mobile-site-name-center">{siteConfig.name}</a>
+  
+  <!-- Mobile Theme Toggle Button -->
+  <div class="mobile-theme-toggle-wrapper">
+    <ThemeToggle />
+  </div>
+</div>
+
+<!-- Mobile Menu Overlay -->
+<div id="mobile-menu-overlay" class="mobile-menu-overlay" aria-hidden="true"></div>
+
+<!-- Mobile Menu Drawer -->
+<div 
+  id="mobile-menu-drawer" 
+  class="mobile-menu-drawer"
+  role="navigation"
+  aria-label="Mobile navigation"
+  aria-hidden="true"
+>
+  <!-- Mobile Header -->
+  <div class="mobile-menu-header">
+    <a href="/" class="mobile-site-name">{siteConfig.name}</a>
+    <button 
+      id="mobile-menu-close" 
+      class="mobile-menu-close"
+      aria-label="Close navigation menu"
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Mobile Navigation Content -->
+  <div class="mobile-menu-content">
+    <!-- Tree Navigation for Mobile -->
+    <nav class="mobile-tree-navigation" aria-label="Documentation navigation">
+      <!-- Root level pages -->
+      {navigation.rootPages.length > 0 && (
+        <div class="mobile-nav-section">
+          {navigation.rootPages.map((page, index) => {
+            const isActive = activeItem?.type === 'root' && activeItem.itemIndex === index;
+            return (
+              <a 
+                href={page.href} 
+                class={`mobile-nav-item mobile-nav-item-root ${isActive ? 'active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <span class="mobile-nav-item-title">{page.name}</span>
+              </a>
+            );
+          })}
+        </div>
+      )}
+
+      <!-- Folder sections -->
+      {navigation.folders.map((folder, folderIndex) => {
+        const isFolderExpanded = expandedFolders.has(folderIndex);
+        const folderHasActive = activeItem?.type === 'folder' && activeItem.folderIndex === folderIndex;
+        
+        return (
+          <div class="mobile-nav-section">
+            <!-- Folder header -->
+            <button 
+              class={`mobile-nav-folder ${folderHasActive ? 'has-active' : ''}`}
+              data-folder-index={folderIndex}
+              data-expanded={isFolderExpanded}
+              aria-expanded={isFolderExpanded}
+              aria-controls={`mobile-folder-${folderIndex}`}
+            >
+              <div class="mobile-nav-folder-content">
+                <span class="mobile-nav-folder-title">{folder.name}</span>
+                <svg 
+                  class="mobile-nav-folder-chevron" 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 20 20" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path 
+                    d="M7.5 5L12.5 10L7.5 15" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </button>
+
+            <!-- Folder contents -->
+            <div 
+              id={`mobile-folder-${folderIndex}`}
+              class={`mobile-nav-folder-items ${isFolderExpanded ? 'expanded' : 'collapsed'}`}
+              aria-hidden={!isFolderExpanded}
+            >
+              {folder.pages.map((page, pageIndex) => {
+                const isActive = folderHasActive && activeItem?.itemIndex === pageIndex;
+                return (
+                  <a 
+                    href={page.href} 
+                    class={`mobile-nav-item mobile-nav-item-child ${isActive ? 'active' : ''}`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <span class="mobile-nav-item-title">{page.name}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Show message if no content exists */}
+      {navigation.rootPages.length === 0 && navigation.folders.length === 0 && (
+        <div class="mobile-nav-empty">
+          <p>No content found. Add some markdown files to <code>src/content/blog/</code> to get started.</p>
+        </div>
+      )}
+    </nav>
+  </div>
+  
+  <!-- Mobile Menu Actions Footer -->
+  <div class="mobile-menu-footer">
+    <div class="mobile-action-grid">
+      <button class="mobile-action-item" id="mobile-search-action" aria-label="Search">
+        <svg class="mobile-action-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.5 17.5L12.5 12.5M14.1667 8.33333C14.1667 11.555 11.555 14.1667 8.33333 14.1667C5.11167 14.1667 2.5 11.555 2.5 8.33333C2.5 5.11167 5.11167 2.5 8.33333 2.5C11.555 2.5 14.1667 5.11167 14.1667 8.33333Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="mobile-action-label">Search</span>
+      </button>
+      
+      <button class="mobile-action-item" id="mobile-share-action" aria-label="Share">
+        <svg class="mobile-action-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15.8333 6.66667C17.2141 6.66667 18.3333 5.54738 18.3333 4.16667C18.3333 2.78595 17.2141 1.66667 15.8333 1.66667C14.4526 1.66667 13.3333 2.78595 13.3333 4.16667C13.3333 5.54738 14.4526 6.66667 15.8333 6.66667Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4.16667 12.5C5.54738 12.5 6.66667 11.3807 6.66667 10C6.66667 8.61929 5.54738 7.5 4.16667 7.5C2.78595 7.5 1.66667 8.61929 1.66667 10C1.66667 11.3807 2.78595 12.5 4.16667 12.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15.8333 18.3333C17.2141 18.3333 18.3333 17.214 18.3333 15.8333C18.3333 14.4526 17.2141 13.3333 15.8333 13.3333C14.4526 13.3333 13.3333 14.4526 13.3333 15.8333C13.3333 17.214 14.4526 18.3333 15.8333 18.3333Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6.35 11.15L13.65 14.85M13.65 5.15L6.35 8.85" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="mobile-action-label">Share</span>
+      </button>
+      
+      <button class="mobile-action-item" id="mobile-settings-action" aria-label="Settings">
+        <svg class="mobile-action-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16.1667 12.5C16.0559 12.7748 16.0277 13.0752 16.0857 13.3657C16.1437 13.6563 16.2855 13.9238 16.4934 14.1317L16.5417 14.18C16.7024 14.3406 16.8289 14.5331 16.9143 14.7461C16.9997 14.9592 17.0422 15.1884 17.0394 15.4194C17.0365 15.6504 16.9884 15.8785 16.8982 16.0894C16.8081 16.3002 16.6776 16.4896 16.5133 16.6467C16.3489 16.8038 16.1544 16.925 15.9408 17.0028C15.7271 17.0806 15.4989 17.1133 15.2679 17.0987C15.037 17.0841 14.8133 17.0226 14.6092 16.9184C14.405 16.8141 14.2252 16.6694 14.0817 16.4933L14.0333 16.445C13.8255 16.2371 13.558 16.0953 13.2674 16.0373C12.9769 15.9793 12.6765 16.0075 12.4017 16.1183C12.1315 16.2244 11.8984 16.4078 11.7315 16.6464C11.5647 16.885 11.4717 17.1686 11.4642 17.46L11.4642 17.5C11.4642 17.942 11.2883 18.3659 10.9757 18.6785C10.6631 18.9911 10.2392 19.167 9.79717 19.167C9.35516 19.167 8.93124 18.9911 8.61865 18.6785C8.30606 18.3659 8.13017 17.942 8.13017 17.5V17.4367C8.11775 17.137 8.01679 16.8464 7.83976 16.6031C7.66273 16.3598 7.41723 16.1746 7.13517 16.0683C6.86036 15.9575 6.55999 15.9293 6.26944 15.9873C5.97889 16.0453 5.71137 16.1871 5.50351 16.395L5.45517 16.4433C5.27906 16.6194 5.06928 16.7641 4.86513 16.8684C4.66098 16.9726 4.43725 17.0341 4.20629 17.0487C3.97533 17.0633 3.74708 17.0306 3.53348 16.9528C3.31987 16.875 3.12534 16.7538 2.96102 16.5967C2.79669 16.4396 2.66624 16.2502 2.57609 16.0394C2.48594 15.8285 2.43779 15.6004 2.43494 15.3694C2.43208 15.1384 2.47458 14.9092 2.55998 14.6961C2.64537 14.4831 2.77189 14.2906 2.93251 14.13L2.98084 14.0817C3.1887 13.8738 3.3305 13.6063 3.3885 13.3157C3.4465 13.0252 3.4183 12.7248 3.30751 12.45C3.20143 12.1798 3.01805 11.9467 2.77944 11.7799C2.54083 11.613 2.25718 11.52 1.96551 11.5125H1.87717C1.43516 11.5125 1.01124 11.3366 0.698654 11.024C0.386067 10.7114 0.210173 10.2875 0.210173 9.84549C0.210173 9.40348 0.386067 8.97956 0.698654 8.66697C1.01124 8.35438 1.43516 8.17849 1.87717 8.17849H1.94051C2.24023 8.17106 2.53082 8.08011 2.77411 7.91308C3.01739 7.74605 3.20258 7.51055 3.30884 7.23849C3.41963 6.96368 3.44783 6.66331 3.38983 6.37276C3.33183 6.08221 3.19003 5.81469 2.98217 5.60683L2.93384 5.55849C2.77322 5.39789 2.6467 5.20536 2.56131 4.99232C2.47591 4.77928 2.43341 4.55008 2.43627 4.31912C2.43913 4.08816 2.48728 3.85991 2.57743 3.6463C2.66758 3.4327 2.79803 3.24325 2.96236 3.08603C3.12668 2.92881 3.32122 2.80758 3.53483 2.72976C3.74843 2.65194 3.97668 2.61925 4.20764 2.63386C4.4386 2.64846 4.66233 2.70992 4.86648 2.81416C5.07063 2.91841 5.25041 3.06311 5.39651 3.23916L5.44484 3.28749C5.6527 3.49535 5.92023 3.63715 6.21077 3.69515C6.50132 3.75315 6.80169 3.72495 7.07651 3.61416H7.13517C7.40537 3.50808 7.63847 3.3247 7.80531 3.08609C7.97216 2.84748 8.06515 2.56383 8.07267 2.27216V2.18382C8.07267 1.74181 8.24857 1.31789 8.56115 1.00531C8.87374 0.692718 9.29766 0.516824 9.73967 0.516824C10.1817 0.516824 10.6056 0.692718 10.9182 1.00531C11.2308 1.31789 11.4067 1.74181 11.4067 2.18382V2.24716C11.4142 2.53883 11.5072 2.82248 11.674 3.06109C11.8409 3.2997 12.074 3.48308 12.3442 3.58916C12.619 3.69995 12.9194 3.72815 13.2099 3.67015C13.5005 3.61215 13.768 3.47035 13.9758 3.26249L14.0242 3.21416C14.2003 3.03811 14.4101 2.89341 14.6142 2.78916C14.8184 2.68492 15.0421 2.62346 15.2731 2.60886C15.504 2.59425 15.7323 2.62694 15.9459 2.70476C16.1595 2.78258 16.354 2.90381 16.5183 3.06103C16.6826 3.21825 16.8131 3.4077 16.9032 3.6213C16.9934 3.83491 17.0415 4.06316 17.0387 4.29412C17.0358 4.52508 16.9821 4.75133 16.8814 4.95548C16.7806 5.15963 16.6359 5.33941 16.4598 5.48549L16.4115 5.53382C16.2036 5.74168 16.0618 6.00921 16.0038 6.29976C15.9458 6.5903 15.974 6.89067 16.0848 7.16549V7.22416C16.1909 7.49436 16.3743 7.72746 16.6129 7.8943C16.8515 8.06115 17.1351 8.15414 17.4268 8.16166H17.5151C17.9571 8.16166 18.381 8.33755 18.6936 8.65014C19.0062 8.96272 19.1821 9.38664 19.1821 9.82866C19.1821 10.2707 19.0062 10.6946 18.6936 11.0072C18.381 11.3198 17.9571 11.4957 17.5151 11.4957H17.4518C17.1601 11.5032 16.8765 11.5962 16.6379 11.763C16.3993 11.9299 16.2159 12.1629 16.1098 12.4329V12.45V12.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="mobile-action-label">Settings</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Mobile Header Bar - Container for all mobile controls */
+  .mobile-header-bar {
+    display: none;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 60px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    z-index: 9999;
+    padding: 0 1rem;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    /* Add shadow for better visual separation */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    /* Ensure it stays fixed */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  /* Dark mode shadow adjustment */
+  :global(.dark) .mobile-header-bar {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Mobile Site Name - Centered */
+  .mobile-site-name-center {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .mobile-site-name-center:hover {
+    color: var(--accent);
+  }
+
+  /* Mobile Theme Toggle - Only visible on mobile */
+  .mobile-theme-toggle-wrapper {
+    position: relative;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+
+  .mobile-theme-toggle-wrapper:hover {
+    opacity: 1;
+  }
+
+  /* Override theme toggle styles for mobile positioning */
+  .mobile-theme-toggle-wrapper :global(button) {
+    background: var(--sidebar-bg) !important;
+    border: 1px solid var(--sidebar-border) !important;
+    border-radius: 6px !important;
+    padding: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    transition: all 0.2s ease !important;
+    /* Center the icon properly */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .mobile-theme-toggle-wrapper :global(button:hover) {
+    background: var(--sidebar-hover) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  /* Mobile Menu Button - Only visible on mobile */
+  .mobile-menu-button {
+    position: relative;
+    background: var(--sidebar-bg);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 6px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-menu-button:hover {
+    background: var(--sidebar-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-menu-button:active {
+    transform: translateY(0);
+  }
+
+  /* Hamburger Icon */
+  .hamburger-icon {
+    width: 18px;
+    height: 18px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .hamburger-line {
+    width: 100%;
+    height: 2px;
+    background: var(--text);
+    border-radius: 1px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+  }
+
+  /* Hamburger Animation */
+  .mobile-menu-button[aria-expanded="true"] .hamburger-line:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+  }
+
+  .mobile-menu-button[aria-expanded="true"] .hamburger-line:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+
+  .mobile-menu-button[aria-expanded="true"] .hamburger-line:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+
+  /* Mobile Menu Overlay */
+  .mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+  }
+
+  .mobile-menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  /* Mobile Menu Drawer */
+  .mobile-menu-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    height: 100vh;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    z-index: 1002;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    /* Hide scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    /* Enhanced momentum scrolling */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Hardware acceleration for smoother performance */
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .mobile-menu-drawer::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-menu-drawer.active {
+    transform: translateX(0);
+  }
+
+  /* Mobile Menu Header */
+  .mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--sidebar-border);
+    background: var(--sidebar-bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+
+  .mobile-site-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .mobile-site-name:hover {
+    color: var(--accent);
+  }
+
+  .mobile-menu-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-menu-close:hover {
+    background: var(--sidebar-hover);
+    color: var(--text);
+  }
+
+  /* Mobile Menu Content */
+  .mobile-menu-content {
+    padding: 0.5rem 0;
+  }
+
+  /* Mobile Tree Navigation */
+  .mobile-tree-navigation {
+    font-size: 16px; /* Larger for mobile */
+  }
+
+  .mobile-nav-section {
+    margin-bottom: 0.25rem;
+  }
+
+  .mobile-nav-section:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Mobile Folder Styles - Touch-friendly */
+  .mobile-nav-folder {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    color: var(--color-text-primary);
+    font-weight: 500;
+    text-align: left;
+    margin-bottom: 1px;
+    min-height: 44px; /* Minimum touch target */
+    display: flex;
+    align-items: center;
+    position: relative;
+    /* Better touch feedback */
+    -webkit-tap-highlight-color: rgba(0, 122, 204, 0.1);
+    tap-highlight-color: rgba(0, 122, 204, 0.1);
+  }
+
+  .mobile-nav-folder:hover {
+    background: var(--sidebar-hover);
+  }
+
+  .mobile-nav-folder.has-active {
+    color: var(--color-accent);
+  }
+
+  .mobile-nav-folder-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .mobile-nav-folder-title {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .mobile-nav-folder-chevron {
+    color: var(--color-text-tertiary);
+    opacity: 0.6;
+    flex-shrink: 0;
+  }
+
+  .mobile-nav-folder[data-expanded="true"] .mobile-nav-folder-chevron {
+    transform: rotate(90deg);
+  }
+
+  /* Mobile Folder Items Container */
+  .mobile-nav-folder-items {
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.2s ease-in-out,
+                padding 0.3s ease;
+    will-change: max-height, opacity;
+  }
+
+  .mobile-nav-folder-items.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .mobile-nav-folder-items.expanded {
+    max-height: 1000px;
+    opacity: 1;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* Smooth animation for folder chevron */
+  .mobile-nav-folder-chevron {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Mobile Navigation Items - Touch-friendly */
+  .mobile-nav-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all 0.2s ease;
+    margin-bottom: 0;
+    font-weight: 400;
+    min-height: 42px; /* Compact but still touch-friendly */
+    display: flex;
+    align-items: center;
+    position: relative;
+    /* Better touch feedback */
+    -webkit-tap-highlight-color: rgba(0, 122, 204, 0.1);
+    tap-highlight-color: rgba(0, 122, 204, 0.1);
+  }
+
+  .mobile-nav-item:hover {
+    background: var(--sidebar-hover);
+    color: var(--color-text-primary);
+  }
+
+  .mobile-nav-item.active {
+    color: var(--color-accent);
+    font-weight: 500;
+    background: rgba(0, 122, 204, 0.1);
+  }
+
+  .mobile-nav-item-title {
+    font-size: 15px;
+    line-height: 1.3;
+  }
+
+  /* Root level items */
+  .mobile-nav-item-root {
+    font-weight: 400;
+  }
+
+  /* Child items - indented */
+  .mobile-nav-item-child {
+    padding-left: 2.5rem;
+    font-size: 15px;
+  }
+
+  /* Empty state */
+  .mobile-nav-empty {
+    padding: 2rem 1.5rem;
+    text-align: center;
+    color: var(--color-text-tertiary);
+    font-size: 14px;
+  }
+
+  .mobile-nav-empty code {
+    background: var(--color-tag-bg);
+    color: var(--color-tag-text);
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+
+  /* Show mobile menu on tablet and mobile devices */
+  @media (max-width: 1023px) {
+    .mobile-header-bar {
+      display: flex !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+    }
+    
+    .mobile-menu-overlay,
+    .mobile-menu-drawer {
+      display: block;
+    }
+  }
+  
+  /* Adjust mobile controls position for different screen sizes */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .mobile-header-bar {
+      height: 64px;
+      padding: 0 1.25rem;
+      position: fixed !important;
+    }
+    
+    .mobile-theme-toggle-wrapper :global(button) {
+      padding: 10px !important;
+      min-width: 44px !important;
+      min-height: 44px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    
+    .mobile-menu-button {
+      padding: 10px;
+    }
+    
+    .hamburger-icon {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .hamburger-line {
+      height: 2.5px;
+    }
+  }
+  
+  @media (max-width: 479px) {
+    .mobile-header-bar {
+      height: 56px;
+      padding: 0 0.75rem;
+      position: fixed !important;
+    }
+    
+    .mobile-site-name-center {
+      font-size: 16px;
+    }
+    
+    .mobile-theme-toggle-wrapper :global(button) {
+      padding: 6px !important;
+      min-width: 36px !important;
+      min-height: 36px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    
+    .mobile-menu-button {
+      padding: 6px;
+    }
+    
+    .hamburger-icon {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .hamburger-line {
+      height: 1.5px;
+    }
+    
+    .mobile-menu-button[aria-expanded="true"] .hamburger-line:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+    
+    .mobile-menu-button[aria-expanded="true"] .hamburger-line:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+  }
+
+  /* Focus styles for accessibility */
+  .mobile-theme-toggle-wrapper :global(button:focus),
+  .mobile-menu-button:focus,
+  .mobile-menu-close:focus,
+  .mobile-nav-folder:focus,
+  .mobile-nav-item:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .mobile-nav-item.active {
+      background: var(--color-text-primary);
+      color: var(--color-surface);
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-menu-drawer,
+    .mobile-menu-overlay,
+    .hamburger-line,
+    .mobile-nav-folder-chevron,
+    .mobile-nav-folder-items {
+      transition: none;
+    }
+  }
+
+  /* Mobile Menu Footer */
+  .mobile-menu-footer {
+    margin-top: auto;
+    padding: 20px 24px 24px 24px;
+    border-top: 1px solid var(--sidebar-border);
+    background: var(--sidebar-bg);
+  }
+
+  .mobile-action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .mobile-action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 76px;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    /* Touch-friendly minimum size */
+    min-width: 76px;
+    /* Prevent text selection */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    /* Improve touch interaction */
+    -webkit-tap-highlight-color: rgba(0, 122, 204, 0.1);
+    tap-highlight-color: rgba(0, 122, 204, 0.1);
+  }
+
+  .mobile-action-item:hover,
+  .mobile-action-item:focus {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 122, 204, 0.2);
+    outline: none;
+  }
+
+  .mobile-action-item:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 122, 204, 0.2);
+  }
+
+  .mobile-action-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .mobile-action-label {
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  /* Dark mode adjustments for mobile actions */
+  :global(.dark) .mobile-action-item {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.dark) .mobile-action-item:hover,
+  :global(.dark) .mobile-action-item:focus {
+    box-shadow: 0 4px 12px rgba(0, 122, 204, 0.3);
+  }
+</style>
+
+<script>
+  // Mobile menu functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const menuButton = document.getElementById('mobile-menu-button');
+    const menuOverlay = document.getElementById('mobile-menu-overlay');
+    const menuDrawer = document.getElementById('mobile-menu-drawer');
+    const menuClose = document.getElementById('mobile-menu-close');
+    const folderButtons = document.querySelectorAll('.mobile-nav-folder');
+    const navLinks = document.querySelectorAll('.mobile-nav-item');
+
+    let isMenuOpen = false;
+
+    // Function to open menu
+    function openMenu() {
+      isMenuOpen = true;
+      menuButton?.setAttribute('aria-expanded', 'true');
+      menuOverlay?.classList.add('active');
+      menuDrawer?.classList.add('active');
+      menuDrawer?.setAttribute('aria-hidden', 'false');
+      menuOverlay?.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden'; // Prevent body scroll
+    }
+
+    // Function to close menu
+    function closeMenu() {
+      isMenuOpen = false;
+      menuButton?.setAttribute('aria-expanded', 'false');
+      menuOverlay?.classList.remove('active');
+      menuDrawer?.classList.remove('active');
+      menuDrawer?.setAttribute('aria-hidden', 'true');
+      menuOverlay?.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = ''; // Restore body scroll
+    }
+
+    // Menu button click
+    menuButton?.addEventListener('click', () => {
+      if (isMenuOpen) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    // Close button click
+    menuClose?.addEventListener('click', closeMenu);
+
+    // Overlay click
+    menuOverlay?.addEventListener('click', closeMenu);
+    
+    // Prevent menu from closing when clicking inside the drawer
+    menuDrawer?.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isMenuOpen) {
+        closeMenu();
+      }
+    });
+
+    // Folder toggle functionality
+    folderButtons.forEach((button) => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // Prevent closing the menu
+        e.stopImmediatePropagation(); // Stop all other handlers
+        
+        const folderIndex = button.getAttribute('data-folder-index');
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
+        const folderItems = document.getElementById(`mobile-folder-${folderIndex}`);
+        
+        if (!folderItems) return;
+        
+        // Haptic feedback for supported devices
+        if ('vibrate' in navigator) {
+          navigator.vibrate(50);
+        }
+        
+        // Toggle expanded state
+        const newExpandedState = !isExpanded;
+        button.setAttribute('data-expanded', newExpandedState.toString());
+        button.setAttribute('aria-expanded', newExpandedState.toString());
+        
+        // Update folder items visibility
+        if (newExpandedState) {
+          folderItems.classList.remove('collapsed');
+          folderItems.classList.add('expanded');
+          folderItems.setAttribute('aria-hidden', 'false');
+        } else {
+          folderItems.classList.remove('expanded');
+          folderItems.classList.add('collapsed');
+          folderItems.setAttribute('aria-hidden', 'true');
+        }
+        
+        // Store expanded state in localStorage for persistence
+        const expandedFolders = JSON.parse(localStorage.getItem('mobileExpandedFolders') || '[]');
+        const folderIndexNum = parseInt(folderIndex || '0');
+        
+        if (newExpandedState) {
+          if (!expandedFolders.includes(folderIndexNum)) {
+            expandedFolders.push(folderIndexNum);
+          }
+        } else {
+          const index = expandedFolders.indexOf(folderIndexNum);
+          if (index > -1) {
+            expandedFolders.splice(index, 1);
+          }
+        }
+        
+        localStorage.setItem('mobileExpandedFolders', JSON.stringify(expandedFolders));
+      });
+      
+      // Add keyboard support for folders
+      button.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+      
+      // Prevent touch events from bubbling up
+      button.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+      });
+      
+      button.addEventListener('touchend', (e) => {
+        e.stopPropagation();
+      });
+    });
+
+    // Restore expanded state from localStorage
+    const expandedFolders = JSON.parse(localStorage.getItem('mobileExpandedFolders') || '[]');
+    expandedFolders.forEach((folderIndex: number) => {
+      const button = document.querySelector(`[data-folder-index="${folderIndex}"]`);
+      const folderItems = document.getElementById(`mobile-folder-${folderIndex}`);
+      
+      if (button && folderItems) {
+        button.setAttribute('data-expanded', 'true');
+        button.setAttribute('aria-expanded', 'true');
+        folderItems.classList.remove('collapsed');
+        folderItems.classList.add('expanded');
+        folderItems.setAttribute('aria-hidden', 'false');
+      }
+    });
+
+    // Close menu when navigating to a new page
+    navLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        // Add visual feedback for link activation
+        link.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+          link.style.transform = '';
+        }, 150);
+        
+        // Haptic feedback for supported devices
+        if ('vibrate' in navigator) {
+          navigator.vibrate(30);
+        }
+        
+        closeMenu();
+      });
+      
+      // Add focus scroll-into-view for keyboard navigation
+      link.addEventListener('focus', () => {
+        link.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest'
+        });
+      });
+    });
+
+    // Handle swipe gestures for closing menu
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    let hasMoved = false;
+
+    menuDrawer?.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      currentX = startX;
+      isDragging = true;
+      hasMoved = false;
+    });
+
+    menuDrawer?.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      currentX = e.touches[0].clientX;
+      const diffX = currentX - startX;
+      
+      // Mark that we've moved if the difference is significant
+      if (Math.abs(diffX) > 10) {
+        hasMoved = true;
+      }
+      
+      // Only allow swiping left (negative direction)
+      if (diffX < 0 && hasMoved) {
+        const translateX = Math.max(diffX, -320); // Limit to drawer width
+        menuDrawer.style.transform = `translateX(${translateX}px)`;
+      }
+    });
+
+    menuDrawer?.addEventListener('touchend', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      
+      const diffX = currentX - startX;
+      
+      // Only close if we actually swiped (not just tapped)
+      if (hasMoved && diffX < -50) {
+        closeMenu();
+      } else {
+        // Reset position
+        menuDrawer.style.transform = '';
+      }
+      
+      // Reset values
+      startX = 0;
+      currentX = 0;
+      hasMoved = false;
+    });
+  });
+</script>

@@ -1,0 +1,78 @@
+---
+import { getCollection } from 'astro:content';
+import BlogLayout from '../layouts/BlogLayout.astro';
+
+// Get all published posts
+const posts = await getCollection('blog', ({ data }) => {
+  return data.draft !== true;
+});
+
+// Sort posts by date
+posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BlogLayout title="Minimal Blog - Home" description="A minimal blog built with Astro and Tailwind CSS">
+  <div class="space-y-12">
+    <header class="mb-12">
+      <h1 class="text-4xl lg:text-5xl font-bold mb-4">Welcome to Minimal Blog</h1>
+      <p class="text-xl text-secondary">
+        A clean, minimalist blog theme built with Astro and Tailwind CSS. 
+        Perfect for developers, writers, and content creators.
+      </p>
+    </header>
+    
+    <section>
+      <h2 class="text-2xl font-semibold mb-8">Latest Posts</h2>
+      <div class="space-y-8">
+        {posts.map((post) => (
+          <article class="group">
+            <a href={`/blog/${post.slug}`} class="block">
+              <div class="p-6 bg-card border border-primary rounded-lg hover:border-accent transition-all duration-200 hover:shadow-lg">
+                <header class="mb-4">
+                  <h3 class="text-2xl font-semibold mb-2 group-hover:text-accent transition-colors">
+                    {post.data.title}
+                  </h3>
+                  <div class="flex flex-wrap items-center gap-4 text-sm text-muted">
+                    <time datetime={post.data.date.toISOString()}>
+                      {new Date(post.data.date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </time>
+                    {post.data.author && (
+                      <>
+                        <span>•</span>
+                        <span>By {post.data.author}</span>
+                      </>
+                    )}
+                  </div>
+                </header>
+                
+                <p class="text-secondary mb-4">
+                  {post.data.description}
+                </p>
+                
+                {post.data.tags && post.data.tags.length > 0 && (
+                  <div class="flex flex-wrap gap-2">
+                    {post.data.tags.map((tag: string) => (
+                      <span class="px-3 py-1 bg-surface text-xs rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </a>
+          </article>
+        ))}
+      </div>
+    </section>
+    
+    {posts.length === 0 && (
+      <div class="text-center py-12">
+        <p class="text-xl text-secondary">No posts yet. Check back soon!</p>
+      </div>
+    )}
+  </div>
+</BlogLayout>

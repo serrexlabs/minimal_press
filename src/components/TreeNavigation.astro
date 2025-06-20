@@ -1,0 +1,370 @@
+---
+import { generateTreeNavigation, findActiveNavigationItem, type TreeNavigation } from '../utils/navigation';
+
+export interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = Astro.url.pathname } = Astro.props;
+
+// Generate dynamic navigation from content structure
+const navigation: TreeNavigation = await generateTreeNavigation();
+
+// Find which item is currently active
+const activeItem = findActiveNavigationItem(navigation, currentPath);
+
+// Auto-expand folder if it contains the active page
+const expandedFolders = new Set<number>();
+if (activeItem?.type === 'folder' && activeItem.folderIndex !== undefined) {
+  expandedFolders.add(activeItem.folderIndex);
+}
+---
+
+<nav class="tree-navigation" aria-label="Documentation navigation">
+  <!-- Root level pages -->
+  {navigation.rootPages.length > 0 && (
+    <div class="nav-section">
+      {navigation.rootPages.map((page, index) => {
+        const isActive = activeItem?.type === 'root' && activeItem.itemIndex === index;
+        return (
+          <a 
+            href={page.href} 
+            class={`nav-item nav-item-root ${isActive ? 'active' : ''}`}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            <span class="nav-item-title">{page.name}</span>
+          </a>
+        );
+      })}
+    </div>
+  )}
+
+  <!-- Folder sections -->
+  {navigation.folders.map((folder, folderIndex) => {
+    const isFolderExpanded = expandedFolders.has(folderIndex);
+    const folderHasActive = activeItem?.type === 'folder' && activeItem.folderIndex === folderIndex;
+    
+    return (
+      <div class="nav-section">
+        <!-- Folder header -->
+        <button 
+          class={`nav-folder ${folderHasActive ? 'has-active' : ''}`}
+          data-folder-index={folderIndex}
+          data-expanded={isFolderExpanded}
+          aria-expanded={isFolderExpanded}
+          aria-controls={`folder-${folderIndex}`}
+        >
+          <div class="nav-folder-content">
+            <span class="nav-folder-title">{folder.name}</span>
+            <svg 
+              class="nav-folder-chevron" 
+              width="12" 
+              height="12" 
+              viewBox="0 0 12 12" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path 
+                d="M4.5 3L7.5 6L4.5 9" 
+                stroke="currentColor" 
+                stroke-width="1.5" 
+                stroke-linecap="round" 
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+        </button>
+
+        <!-- Folder contents -->
+        <div 
+          id={`folder-${folderIndex}`}
+          class={`nav-folder-items ${isFolderExpanded ? 'expanded' : 'collapsed'}`}
+          aria-hidden={!isFolderExpanded}
+        >
+          {folder.pages.map((page, pageIndex) => {
+            const isActive = folderHasActive && activeItem?.itemIndex === pageIndex;
+            return (
+              <a 
+                href={page.href} 
+                class={`nav-item nav-item-child ${isActive ? 'active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <span class="nav-item-title">{page.name}</span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    );
+  })}
+
+  {/* Show message if no content exists */}
+  {navigation.rootPages.length === 0 && navigation.folders.length === 0 && (
+    <div class="nav-empty">
+      <p>No content found. Add some markdown files to <code>src/content/blog/</code> to get started.</p>
+    </div>
+  )}
+</nav>
+
+<style>
+  .tree-navigation {
+    overflow-y: hidden; /* Remove scrollbar when not needed */
+    height: auto; /* Let content determine height */
+    font-size: 0.875rem;
+  }
+
+  .nav-section {
+    margin-bottom: 0.25rem;
+  }
+
+  .nav-section:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Folder Styles - Minimal like minimal.guide */
+  .nav-folder {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    color: var(--color-text-primary);
+    font-weight: 500;
+    text-align: left;
+    margin-bottom: 2px;
+  }
+
+  .nav-folder:hover {
+    background: var(--sidebar-hover);
+  }
+
+  .nav-folder.has-active {
+    color: var(--color-accent);
+  }
+
+  .nav-folder-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .nav-folder-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .nav-folder-chevron {
+    transition: transform 0.15s ease;
+    color: var(--color-text-tertiary);
+    opacity: 0.6;
+    flex-shrink: 0;
+  }
+
+  .nav-folder[data-expanded="true"] .nav-folder-chevron {
+    transform: rotate(90deg);
+  }
+
+  /* Folder Items Container */
+  .nav-folder-items {
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .nav-folder-items.collapsed {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  .nav-folder-items.expanded {
+    max-height: 500px;
+    opacity: 1;
+  }
+
+  /* Navigation Items - Clean minimal style */
+  .nav-item {
+    display: block;
+    padding: 0.375rem 1rem;
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all 0.15s ease;
+    margin-bottom: 1px;
+    font-weight: 400;
+  }
+
+  .nav-item:hover {
+    background: var(--sidebar-hover);
+    color: var(--color-text-primary);
+  }
+
+  .nav-item.active {
+    color: var(--color-accent);
+    font-weight: 500;
+  }
+
+  .nav-item-title {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  /* Root level items */
+  .nav-item-root {
+    font-weight: 400;
+  }
+
+  /* Child items - slightly indented */
+  .nav-item-child {
+    padding-left: 2rem;
+    font-size: 0.875rem;
+  }
+
+  /* Empty state */
+  .nav-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--color-text-tertiary);
+    font-size: 0.8rem;
+  }
+
+  .nav-empty code {
+    background: var(--color-tag-bg);
+    color: var(--color-tag-text);
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .nav-folder {
+      padding: 0.5rem 0.75rem;
+    }
+
+    .nav-item {
+      padding: 0.375rem 0.75rem;
+    }
+
+    .nav-item-child {
+      padding-left: 1.5rem;
+    }
+  }
+
+  /* Accessibility improvements */
+  @media (prefers-reduced-motion: reduce) {
+    .nav-folder-items,
+    .nav-folder-chevron,
+    .nav-item {
+      transition: none;
+    }
+  }
+
+  /* Focus styles for keyboard navigation */
+  .nav-folder:focus,
+  .nav-item:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+    background: var(--sidebar-hover);
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .nav-item.active {
+      background: var(--color-text-primary);
+      color: var(--color-surface);
+    }
+  }
+</style>
+
+<script>
+  // Tree navigation functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const folderButtons = document.querySelectorAll('.nav-folder');
+    
+    folderButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const folderIndex = button.getAttribute('data-folder-index');
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
+        const folderItems = document.getElementById(`folder-${folderIndex}`);
+        
+        if (!folderItems) return;
+        
+        // Toggle expanded state
+        const newExpandedState = !isExpanded;
+        button.setAttribute('data-expanded', newExpandedState.toString());
+        button.setAttribute('aria-expanded', newExpandedState.toString());
+        
+        // Update folder items visibility
+        if (newExpandedState) {
+          folderItems.classList.remove('collapsed');
+          folderItems.classList.add('expanded');
+          folderItems.setAttribute('aria-hidden', 'false');
+        } else {
+          folderItems.classList.remove('expanded');
+          folderItems.classList.add('collapsed');
+          folderItems.setAttribute('aria-hidden', 'true');
+        }
+        
+        // Store expanded state in localStorage for persistence
+        const expandedFolders = JSON.parse(localStorage.getItem('expandedFolders') || '[]');
+        const folderIndexNum = parseInt(folderIndex || '0');
+        
+        if (newExpandedState) {
+          if (!expandedFolders.includes(folderIndexNum)) {
+            expandedFolders.push(folderIndexNum);
+          }
+        } else {
+          const index = expandedFolders.indexOf(folderIndexNum);
+          if (index > -1) {
+            expandedFolders.splice(index, 1);
+          }
+        }
+        
+        localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+      });
+    });
+    
+    // Restore expanded state from localStorage
+    const expandedFolders = JSON.parse(localStorage.getItem('expandedFolders') || '[]');
+    expandedFolders.forEach((folderIndex: number) => {
+      const button = document.querySelector(`[data-folder-index="${folderIndex}"]`);
+      const folderItems = document.getElementById(`folder-${folderIndex}`);
+      
+      if (button && folderItems) {
+        button.setAttribute('data-expanded', 'true');
+        button.setAttribute('aria-expanded', 'true');
+        folderItems.classList.remove('collapsed');
+        folderItems.classList.add('expanded');
+        folderItems.setAttribute('aria-hidden', 'false');
+      }
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.target && (e.target as Element).closest('.tree-navigation')) {
+        const currentElement = e.target as HTMLElement;
+        
+        // Arrow key navigation
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const navItems = Array.from(document.querySelectorAll('.nav-folder, .nav-item'));
+          const currentIndex = navItems.indexOf(currentElement);
+          
+          if (currentIndex !== -1) {
+            const nextIndex = e.key === 'ArrowDown' 
+              ? Math.min(currentIndex + 1, navItems.length - 1)
+              : Math.max(currentIndex - 1, 0);
+            
+            (navItems[nextIndex] as HTMLElement).focus();
+          }
+        }
+        
+        // Enter or Space to activate folders
+        if ((e.key === 'Enter' || e.key === ' ') && currentElement.classList.contains('nav-folder')) {
+          e.preventDefault();
+          currentElement.click();
+        }
+      }
+    });
+  });
+</script>

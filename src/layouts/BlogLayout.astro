@@ -1,0 +1,131 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import RelatedPosts from '../components/RelatedPosts.astro';
+import InternalLinks from '../components/InternalLinks.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import TreeNavigation from '../components/TreeNavigation.astro';
+import MobileMenu from '../components/MobileMenu.astro';
+import ReadingExperience from '../components/ReadingExperience.astro';
+import SmartFAB from '../components/SmartFAB.astro';
+import { calculateReadingTime } from '../utils/seo';
+import { siteConfig } from '../config';
+
+export interface Props {
+  title: string;
+  description?: string;
+  headings?: Array<{ depth: number; slug: string; text: string }>;
+  frontmatter?: any;
+  content?: string;
+}
+
+const { title, description, headings = [], frontmatter, content = '' } = Astro.props;
+
+// Create article data for SEO
+const articleData = frontmatter ? {
+  content: content,
+  tags: frontmatter.tags || [],
+  date: new Date(frontmatter.date),
+  updated: frontmatter.updated ? new Date(frontmatter.updated) : undefined,
+  slug: Astro.url.pathname.split('/').pop() || ''
+} : undefined;
+
+// Calculate reading time for display
+const readingTime = content ? calculateReadingTime(content) : 0;
+---
+
+<BaseLayout 
+  title={title} 
+  description={description || frontmatter?.description}
+  author={frontmatter?.author}
+  type={frontmatter ? 'article' : 'website'}
+  article={articleData}
+  image={frontmatter?.image}
+>
+  <!-- Mobile Menu -->
+  <MobileMenu currentPath={Astro.url.pathname} />
+  
+  <div class="app-container">
+    <!-- Left Sidebar -->
+    <div class="left-sidebar">
+      <div class="site-header">
+        <a href="/" class="site-name">{siteConfig.name}</a>
+        <div class="theme-toggle-wrapper">
+          <ThemeToggle />
+        </div>
+      </div>
+      
+      <!-- Tree Navigation -->
+      <TreeNavigation currentPath={Astro.url.pathname} />
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="content-wrapper">
+        <!-- Breadcrumb Navigation -->
+        <Breadcrumb currentPage={title} />
+        
+        <article class="page-content">
+          {frontmatter && (
+            <div class="page-header">
+              <h1>{frontmatter.title}</h1>
+              <p class="page-description">{frontmatter.description}</p>
+              <div class="page-meta">
+                <time>{new Date(frontmatter.date).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}</time>
+                {frontmatter.author && (
+                  <span>• By {frontmatter.author}</span>
+                )}
+                {readingTime > 0 && (
+                  <span>• {readingTime} min read</span>
+                )}
+              </div>
+            </div>
+          )}
+          
+          <div class="markdown-content">
+            <slot />
+          </div>
+          
+          {/* Add internal link suggestions for blog articles */}
+          {frontmatter && content && (
+            <InternalLinks 
+              content={content}
+              currentSlug={articleData?.slug || ''}
+            />
+          )}
+          
+          {/* Add related posts for blog articles */}
+          {frontmatter && (
+            <RelatedPosts 
+              currentPost={{
+                slug: articleData?.slug || '',
+                data: {
+                  title: frontmatter.title,
+                  description: frontmatter.description,
+                  tags: frontmatter.tags,
+                  date: new Date(frontmatter.date)
+                }
+              }}
+            />
+          )}
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOC as true overlay - completely outside layout container -->
+  {headings.length > 0 && (
+    <TableOfContents headings={headings} />
+  )}
+  
+  <!-- Reading Experience Enhancements -->
+  <ReadingExperience />
+  
+  <!-- Smart FAB for Mobile -->
+  <SmartFAB headings={headings} />
+</BaseLayout>

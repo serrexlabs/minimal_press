@@ -1,0 +1,28 @@
+---
+import { getCollection } from 'astro:content';
+import BlogLayout from '../../layouts/BlogLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: post,
+  }));
+}
+
+const post = Astro.props;
+const { Content, headings } = await post.render();
+
+// Get the raw content for SEO processing
+const rawContent = post.body;
+---
+
+<BlogLayout
+  title={post.data.title}
+  description={post.data.description}
+  headings={headings}
+  frontmatter={post.data}
+  content={rawContent}
+>
+  <Content />
+</BlogLayout>

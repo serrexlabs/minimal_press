@@ -1,0 +1,51 @@
+---
+import BlogLayout from '../layouts/BlogLayout.astro';
+import { siteConfig } from '../config';
+---
+
+<BlogLayout 
+  title={siteConfig.about.title}
+  description={siteConfig.about.description}
+>
+  <div class="page-header">
+    <h1>{siteConfig.about.title}</h1>
+    <p class="page-description">{siteConfig.about.description}</p>
+  </div>
+  
+  <div class="markdown-content">
+    <p>{siteConfig.about.mission}</p>
+    
+    <h2>Our Mission</h2>
+    <p>{siteConfig.about.mission}</p>
+    
+    <h2>What We Do</h2>
+    <p>We focus on creating:</p>
+    <ul>
+      <li><strong>Clean Design</strong> - Minimalist interfaces that don't distract from your content</li>
+      <li><strong>Fast Performance</strong> - Optimized for speed and Core Web Vitals</li>
+      <li><strong>SEO Ready</strong> - Built-in structured data and meta tag optimization</li>
+      <li><strong>Developer Friendly</strong> - Modern tools and technologies</li>
+    </ul>
+    
+    <h2>Technologies We Use</h2>
+    <p>Our blog theme is built with modern web technologies:</p>
+    <ul>
+      <li><strong>Astro</strong> - For static site generation and optimal performance</li>
+      <li><strong>Tailwind CSS</strong> - For utility-first styling and design consistency</li>
+      <li><strong>TypeScript</strong> - For type safety and better developer experience</li>
+      <li><strong>Markdown/MDX</strong> - For content authoring with component support</li>
+    </ul>
+    
+    <h2>Contact Information</h2>
+    <p>Get in touch with us:</p>
+    <ul>
+      <li><strong>Email:</strong> <a href={`mailto:${siteConfig.author.email}`}>{siteConfig.author.email}</a></li>
+      {siteConfig.author.twitter && (
+        <li><strong>Twitter:</strong> <a href={siteConfig.social.twitter} target="_blank" rel="noopener noreferrer">{siteConfig.author.twitter}</a></li>
+      )}
+      {siteConfig.author.github && (
+        <li><strong>GitHub:</strong> <a href={siteConfig.social.github} target="_blank" rel="noopener noreferrer">@{siteConfig.author.github}</a></li>
+      )}
+    </ul>
+  </div>
+</BlogLayout>

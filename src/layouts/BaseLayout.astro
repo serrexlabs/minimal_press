@@ -1,0 +1,218 @@
+---
+import '../styles/global.css';
+import StructuredData from '../components/StructuredData.astro';
+import { extractKeywords, generateMetaDescription } from '../utils/seo';
+import { siteConfig } from '../config';
+
+export interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  keywords?: string[];
+  author?: string;
+  type?: 'website' | 'article';
+  article?: {
+    content: string;
+    tags: string[];
+    date: Date;
+    updated?: Date;
+    slug: string;
+  };
+}
+
+const { 
+  title, 
+  description = siteConfig.description,
+  image = siteConfig.seo.defaultImage,
+  keywords = [],
+  author = siteConfig.author.name,
+  type = 'website',
+  article
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const siteUrl = Astro.site?.toString() || siteConfig.url;
+
+// Enhanced meta description
+const metaDescription = article 
+  ? generateMetaDescription(article.content, description)
+  : description;
+
+// Enhanced keywords
+const metaKeywords = article
+  ? extractKeywords(article.content, article.tags, 10)
+  : keywords.length > 0 
+    ? keywords 
+    : siteConfig.seo.keywords;
+
+// Social sharing image
+const ogImage = image.startsWith('http') ? image : new URL(image, Astro.site);
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="generator" content={Astro.generator} />
+  
+  <!-- Font preconnects for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <!-- Theme initialization script - prevent flash of wrong theme -->
+  <script is:inline>
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  </script>
+  
+  <!-- Primary Meta Tags -->
+  <title>{title}</title>
+  <meta name="title" content={title} />
+  <meta name="description" content={metaDescription} />
+  <meta name="keywords" content={metaKeywords.join(', ')} />
+  {author && <meta name="author" content={author} />}
+  <meta name="robots" content="index, follow" />
+  <meta name="language" content="en" />
+  <meta name="revisit-after" content="7 days" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content={type} />
+  <meta property="og:url" content={canonicalURL} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={metaDescription} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:image:alt" content={`${title} - Cover Image`} />
+  <meta property="og:site_name" content={siteConfig.name} />
+  <meta property="og:locale" content={siteConfig.seo.locale} />
+  {article && (
+    <>
+      <meta property="article:author" content={author} />
+      <meta property="article:published_time" content={article.date.toISOString()} />
+      {article.updated && (
+        <meta property="article:modified_time" content={article.updated.toISOString()} />
+      )}
+      {article.tags && article.tags.map(tag => (
+        <meta property="article:tag" content={tag} />
+      ))}
+    </>
+  )}
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content={canonicalURL} />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={metaDescription} />
+  <meta name="twitter:image" content={ogImage} />
+  <meta name="twitter:image:alt" content={`${title} - Cover Image`} />
+  {siteConfig.author.twitter && (
+    <>
+      <meta name="twitter:site" content={siteConfig.author.twitter} />
+      <meta name="twitter:creator" content={siteConfig.author.twitter} />
+    </>
+  )}
+  
+  <!-- Canonical -->
+  <link rel="canonical" href={canonicalURL} />
+  
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/rss.xml" />
+  
+  <!-- Performance optimizations -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+  <!-- Critical fonts with font-display: swap for better loading -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet"
+  />
+  
+  <!-- Preload critical resources -->
+  <link rel="modulepreload" href="/src/components/ThemeToggle.astro" />
+  
+  <!-- Resource hints for better performance -->
+  
+  <!-- Structured Data -->
+  <StructuredData type="organization" />
+  {article && (
+    <StructuredData 
+      type="article" 
+      data={{
+        title: title,
+        description: metaDescription,
+        date: article.date,
+        author: author,
+        image: image,
+        tags: article.tags,
+        slug: article.slug,
+        content: article.content
+      }}
+    />
+  )}
+
+  <!-- Theme Detection Script -->
+  <script is:inline>
+    // Check for saved theme preference or default to 'dark'
+    const theme = (() => {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+        return localStorage.getItem('theme');
+      }
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+      return 'light';
+    })();
+    
+    if (theme === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+    
+    window.localStorage.setItem('theme', theme);
+  </script>
+</head>
+<body class="min-h-screen transition-colors duration-200">
+  <slot />
+  
+  <!-- Theme Toggle Script -->
+  <script>
+    // Theme toggle functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeToggleBtn = document.getElementById('theme-toggle');
+      if (!themeToggleBtn) return;
+      
+      const html = document.documentElement;
+      
+      themeToggleBtn.addEventListener('click', () => {
+        const isDark = html.classList.contains('dark');
+        
+        if (isDark) {
+          html.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        } else {
+          html.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        }
+      });
+    });
+    
+    // Handle keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Cmd/Ctrl + K for search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        // Trigger search modal (to be implemented)
+        console.log('Search triggered');
+      }
+    });
+  </script>
+</body>
+</html>

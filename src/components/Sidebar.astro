@@ -1,0 +1,197 @@
+---
+import { getCollection } from 'astro:content';
+
+// Get all blog posts
+const posts = await getCollection('blog', ({ data }) => {
+  return data.draft !== true;
+});
+
+// Sort posts by date
+posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+// Group posts by year
+const postsByYear = posts.reduce((acc, post) => {
+  const year = new Date(post.data.date).getFullYear();
+  if (!acc[year]) {
+    acc[year] = [];
+  }
+  acc[year].push(post);
+  return acc;
+}, {} as Record<number, typeof posts>);
+
+// Get unique tags
+const allTags = posts.flatMap(post => post.data.tags);
+const uniqueTags = [...new Set(allTags)];
+
+const currentPath = Astro.url.pathname;
+---
+
+<div class="h-full flex flex-col">
+  <!-- Header -->
+  <div class="h-20 px-6 flex items-center border-b border-primary">
+    <a href="/" class="text-xl font-semibold hover:text-accent transition-colors">
+      Minimal Blog
+    </a>
+  </div>
+  
+  <!-- Navigation -->
+  <nav class="flex-1 overflow-y-auto py-6">
+    <!-- Main Navigation -->
+    <div class="mb-8">
+      <h2 class="px-6 mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+        Navigation
+      </h2>
+      <ul class="space-y-1">
+        <li>
+          <a
+            href="/"
+            class={`block px-6 py-2 text-sm hover:bg-sidebar-hover transition-colors ${
+              currentPath === '/' ? 'bg-accent text-white hover:bg-accent-hover' : ''
+            }`}
+          >
+            Home
+          </a>
+        </li>
+        <li>
+          <a
+            href="/about"
+            class={`block px-6 py-2 text-sm hover:bg-sidebar-hover transition-colors ${
+              currentPath === '/about/' ? 'bg-accent text-white hover:bg-accent-hover' : ''
+            }`}
+          >
+            About
+          </a>
+        </li>
+        <li>
+          <a
+            href="/tags"
+            class={`block px-6 py-2 text-sm hover:bg-sidebar-hover transition-colors ${
+              currentPath === '/tags/' ? 'bg-accent text-white hover:bg-accent-hover' : ''
+            }`}
+          >
+            Tags
+          </a>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- Recent Posts -->
+    <div class="mb-8">
+      <h2 class="px-6 mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+        Recent Posts
+      </h2>
+      <ul class="space-y-1">
+        {posts.slice(0, 5).map((post) => (
+          <li>
+            <a
+              href={`/blog/${post.slug}`}
+              class={`block px-6 py-2 text-sm hover:bg-sidebar-hover transition-colors ${
+                currentPath === `/blog/${post.slug}/` ? 'bg-accent text-white hover:bg-accent-hover' : ''
+              }`}
+            >
+              <div class="truncate">{post.data.title}</div>
+              <div class="text-xs text-muted mt-1">
+                {new Date(post.data.date).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+    
+    <!-- Posts by Year (Collapsible) -->
+    <div class="mb-8">
+      <h2 class="px-6 mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+        Archive
+      </h2>
+      <div class="space-y-2">
+        {Object.entries(postsByYear)
+          .sort(([a], [b]) => Number(b) - Number(a))
+          .map(([year, yearPosts]) => (
+            <details class="group">
+              <summary class="px-6 py-2 text-sm cursor-pointer hover:bg-sidebar-hover transition-colors flex items-center justify-between">
+                <span>{year} ({yearPosts.length})</span>
+                <svg
+                  class="w-4 h-4 transition-transform group-open:rotate-90"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </summary>
+              <ul class="mt-1 space-y-1">
+                {yearPosts.map((post) => (
+                  <li>
+                    <a
+                      href={`/blog/${post.slug}`}
+                      class={`block px-8 py-2 text-sm hover:bg-sidebar-hover transition-colors ${
+                        currentPath === `/blog/${post.slug}/` ? 'bg-accent text-white hover:bg-accent-hover' : ''
+                      }`}
+                    >
+                      <div class="truncate">{post.data.title}</div>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ))}
+      </div>
+    </div>
+    
+    <!-- Tags -->
+    {uniqueTags.length > 0 && (
+      <div class="mb-8">
+        <h2 class="px-6 mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+          Tags
+        </h2>
+        <div class="px-6 flex flex-wrap gap-2">
+          {uniqueTags.map((tag) => (
+            <a
+              href={`/tags/${tag}`}
+              class="px-3 py-1 text-xs bg-surface rounded-full hover:bg-sidebar-hover transition-colors"
+            >
+              {tag}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+  </nav>
+  
+  <!-- Footer -->
+  <div class="px-6 py-4 border-t border-primary">
+    <div class="text-xs text-muted">
+      © {new Date().getFullYear()} Minimal Blog
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Custom scrollbar for sidebar */
+  nav::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  nav::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+  
+  nav::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+</style>

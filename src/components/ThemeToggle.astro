@@ -1,0 +1,96 @@
+---
+---
+
+<button class="theme-toggle" type="button" aria-label="Toggle theme">
+  <!-- Sun icon (light mode) -->
+  <svg
+    class="theme-icon sun-icon"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+    />
+  </svg>
+  
+  <!-- Moon icon (dark mode) -->
+  <svg
+    class="theme-icon moon-icon"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+    />
+  </svg>
+</button>
+
+<style>
+  .theme-toggle {
+    background: var(--sidebar-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease;
+  }
+  
+  .theme-toggle:hover {
+    background: var(--sidebar-hover);
+  }
+  
+  .theme-icon {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+  }
+  
+  .theme-toggle:hover .theme-icon {
+    transform: scale(1.1);
+  }
+  
+  .sun-icon {
+    display: none;
+  }
+  
+  .moon-icon {
+    display: block;
+  }
+  
+  :global(.dark) .sun-icon {
+    display: block;
+  }
+  
+  :global(.dark) .moon-icon {
+    display: none;
+  }
+</style>
+
+<script>
+  // Theme toggle functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const themeToggles = document.querySelectorAll('.theme-toggle');
+    const html = document.documentElement;
+    
+    // Check for saved theme preference or default to 'light'
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    html.classList.toggle('dark', currentTheme === 'dark');
+    
+    themeToggles.forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const isDark = html.classList.contains('dark');
+        html.classList.toggle('dark', !isDark);
+        localStorage.setItem('theme', isDark ? 'light' : 'dark');
+      });
+    });
+  });
+</script>
