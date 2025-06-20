@@ -12,7 +12,8 @@
       "Bash(curl:*)",
       "WebFetch(domain:minimal.guide)",
       "mcp__playwright__browser_snapshot",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }

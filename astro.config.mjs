@@ -1,13 +1,13 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { siteConfig } from './src/config.ts';
 
 // https://astro.build/config
 export default defineConfig({
-  site: siteConfig.url,
+  site: 'https://serrexlabs.github.io',
+  base: '/minimal_press',
   integrations: [
     mdx(),
     sitemap({
@@ -46,9 +46,6 @@ export default defineConfig({
       },
     }),
   ],
-  vite: {
-    plugins: [tailwindcss()]
-  },
   markdown: {
     shikiConfig: {
       theme: 'github-dark',
