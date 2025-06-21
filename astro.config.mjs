@@ -6,7 +6,8 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://serrexlabs.github.io',
-  base: '/minimal_press',
+  // Only use base path for GitHub Pages deployment
+  base: process.env.GITHUB_ACTIONS ? '/minimal_press' : undefined,
   integrations: [
     mdx(),
     sitemap(),
