@@ -5,9 +5,9 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://serrexlabs.github.io/minimal_press',
-  // Always use base path for GitHub Pages
-  base: '/minimal_press',
+  site: 'https://serrexlabs.com',
+  // No base path needed for custom domain
+  // base: '/minimal_press',
   integrations: [
     mdx(),
     sitemap(),
